@@ -1,0 +1,35 @@
+#!/bin/bash
+# TODO: Integrate with .kube/config
+
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+protected=(prod production)
+current_context=$(kubectl config current-context)
+config_path="${HOME}/.kube/protected"
+
+if [[ "$PR8TECTOR_CONFIG" != "" ]]
+then
+	config_path=$PR8TECTOR_CONFIG
+fi
+
+if [[ "$config_path" != "" ]]
+then
+	IFS=$'\n' read -a protected <<< "$(cat $config_path)"
+fi
+
+# TODO: For read actions only display warning
+if [[ " ${protected[*]} " =~ " ${current_context} " ]]; then # TODO: map parts of context name
+	while true; do
+		# TODO: add option to skip this info, --silent
+		echo -e "${RED}[ATTENTION] This cluster ($current_context) is protected. Are you sure? (y/n): ${NC} \c"
+    		read yn
+    		case $yn in
+        		[Yy]* ) break;;
+        		[Nn]* ) echo "Aborting ..."; exit;;
+        		* ) echo "Please answer yes or no.";;
+    		esac
+	done
+fi
+
+kubectl $@
